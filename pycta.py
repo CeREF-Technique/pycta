@@ -16,7 +16,9 @@ import sys
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
+from scipy import integrate
 
 class CTA():
     """
@@ -111,10 +113,23 @@ class Visit(CTA):
         """
         
     
-    def compute_area(self):
+    def compute_area(self, data="CH4", plot=False):
         """
         """
+        if data == "CO2":
+            y = self.data.CO2.tolist()
+        elif data == "CH4":
+            y = self.data.CH4.tolist()
+        else:
+            return
         
+        y_int = integrate.cumtrapz(y, x=None,dx=1.0, initial=0)
+        
+        if plot == True:
+            x = np.arange(0,len(y_int),1)
+            
+            plt.plot(x, y_int, 'ro')
+            plt.show()
 
 
 if __name__ == '__main__':
@@ -125,3 +140,5 @@ if __name__ == '__main__':
     cta.read_csv_file(FILE_PATH)
     
     cta.split_visits()
+    
+    cta.visits[0].compute_area(plot=True)
