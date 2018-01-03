@@ -63,18 +63,22 @@ class CTA():
         
         for ID in IDs:
             prev = 0
+            
+            # Select a group
             unique_grp = grp.get_group(ID)
             
             # Convert DataFrame to Numpy array
             index_array = unique_grp.index.values
             
-            # Split array in visits based on index
+            # Split array in visits based on index consecutive indices
             splits = np.append(np.where(np.diff(index_array) != 1)[0],len(index_array)+1)+1
             
+            #Split data n visits
             for split in splits:
                 visits_index.append(index_array[prev:split])
                 prev = split
         
+        # Convert visits indices with corresponding data
         for visit in visits_index:
             self.visits.append(Visit(cta.df.loc[visit.astype(np.int32).tolist()]))
     
@@ -100,7 +104,7 @@ class Visit(CTA):
     def __init__(self,df):
         """
         """
-        
+        self.data = df
     
     def peak_detect(self):
         """
