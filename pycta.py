@@ -28,37 +28,43 @@ class CTA():
     def __init__(self):
         """
         """
-        visits = list()
+        self.CWD = os.getcwd()
+        self.visits = list()
     
     def read_csv_folder(FOLDER_PATH):
         """
         """
         
     
-    def read_csv_file(FILE_PATH):
+    def read_csv_file(self,FILE_PATH):
         """
         Parameters
         ----------
         FILE_PATH : str
-            String containing the path to the csv file.
+            String containing the relative path to the csv file.
     
         Returns
         -------
             Dataframe containing all visits in the csv file.
         """
-        df = pd.read_csv(FILEPATH,header=1,names=["date","hour","ID","CH4","CO2","weigth","scale"])
+        FILEPATH = os.path.join(self.CWD, FILE_PATH)
+        
+        try:
+            self.df = pd.read_csv(FILEPATH,header=1,names=["date","hour","ID","CH4","CO2","weigth","scale"])
+        except:
+            print "Impossible to read file (check that file exist and is in CSV format)"
     
-    def split_visits():
+    def split_visits(self):
         """
         """
         
     
-    def peaks_detect():
+    def peaks_detect(self):
         """
         """
         
     
-    def compute_areas():
+    def compute_areas(self):
         """
         """
         
@@ -77,12 +83,12 @@ class Visit(CTA):
         """
         
     
-    def peak_detect():
+    def peak_detect(self):
         """
         """
         
     
-    def compute_area():
+    def compute_area(self):
         """
         """
         
@@ -90,3 +96,7 @@ class Visit(CTA):
 
 if __name__ == '__main__':
     
+    FILE_PATH = r"csv\fichier_demo"
+    
+    cta = CTA()
+    cta.read_csv_file(FILE_PATH)
