@@ -1,0 +1,1 @@
+start cmd.exe && cd "C:\1_CERISIC\CERISIC\Projet CTA" && bokeh serve --show visualization
