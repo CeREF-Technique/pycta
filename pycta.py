@@ -44,7 +44,7 @@ class CTA():
         ----------
         FILE_NAME : str
             Name of the csv file to read.
-    
+        
         Returns
         -------
             DataFrame containing all visits in the csv file.
@@ -58,6 +58,7 @@ class CTA():
     
     def split_visits(self):
         """
+        Split the loaded CSV file in individual **Visit**
         """
         visits_index = list()
         
@@ -88,19 +89,37 @@ class CTA():
         for visit in visits_index:
             self.visits.append(Visit(cta.df.loc[visit.astype(np.int32).tolist()]))
     
-    def peaks_detect(self,delta):
+    def peaks_detect(self,delta = 0.001):
         """
+        Detect peak (minimums and maximums) in waveforms.
+        
+        Parameters
+        ----------
+        delta : float
         """
-        pass
+        for visit in self.visits:
+            visit.peak_detect(delta=delta)
     
     def compute_areas(self, data="CH4"):
         """
+        Computes area under each **Visit** curve.
+        
+        Parameters
+        ----------
+        delta : float
+            Step to consider a point maximum or minimum.
         """
         for visit in self.visits:
             self.areas.append(visit.compute_area(data=data))
     
     def plot_visit(self, idx):
         """
+        Plot the given **Visit** curve.
+        
+        Parameters
+        ----------
+        idx : int
+            Index of the **Visit** to plot.
         """
         try:
             self.visits[idx].plot_visit()
@@ -122,18 +141,29 @@ class Visit(CTA):
         self.y_CO2 = df.CO2.tolist()
         self.y_CH4 = df.CH4.tolist()
     
-    def peak_detect(self,delta):
+    def peak_detect(self,delta = 0.001):
         """
+        Detect peak (minimums and maximums) in waveforms.
+        
+        Parameters
+        ----------
+        delta : float
         """
         x = np.arange(0,len(self.y_CH4),1).tolist()
         
-        self.max_pk, self.min_pk = ps.peakdetect(x,self.y_CO2,delta)
-        
-        return self.max_pk, self.min_pk
+        self.max_pk_CO2, self.min_pk_CO2 = ps.peakdetect(x,self.y_CO2,delta)
+        self.max_pk_CH4, self.min_pk_CH4 = ps.peakdetect(x,self.y_CO2,delta)
     
     def compute_area(self, data="CH4"):
         """
+        Computes area under each **Visit** curve.
+        
+        Parameters
+        ----------
+        delta : float
+            Step to consider a point maximum or minimum.
         """
+        
         if data == "CO2":
             y = self.data.CO2.tolist()
         elif data == "CH4":
@@ -147,6 +177,12 @@ class Visit(CTA):
     
     def plot_visit(self, show_peaks=False):
         """
+        Plot the given **Visit** curve.
+        
+        Parameters
+        ----------
+        show_peaks : bool
+            Flag set to True if maximum and minimum peak must be displayed.
         """
         
         y_CO2 = self.data.CO2.tolist()
@@ -154,17 +190,33 @@ class Visit(CTA):
         
         x = np.arange(0,len(y_CH4),1).tolist()
         
+        # Compute CO2 and CH4 curves
         plt.plot(x, y_CO2, 'r-', x, y_CH4, 'b-')
         
         if show_peaks == True:
-            max_abs = [i[0] for i in self.max_pk]
-            max_ord = [i[1] for i in self.max_pk]
+            # Compute abscissa and ordinate for maximum CO2 peak values
+            max_abs_CO2 = [i[0] for i in self.max_pk_CO2]
+            max_ord_CO2 = [i[1] for i in self.max_pk_CO2]
             
-            min_abs = [i[0] for i in self.min_pk]
-            min_ord = [i[1] for i in self.min_pk]
+            # Compute abscissa and ordinate for minimum CO2 peak values
+            min_abs_CO2 = [i[0] for i in self.min_pk_CO2]
+            min_ord_CO2 = [i[1] for i in self.min_pk_CO2]
             
-            plt.plot(max_abs, max_ord,'ro')
-            plt.plot(min_abs, min_ord,'bo')
+            # Compute abscissa and ordinate for maximum CH4 peak values
+            max_abs_CH4 = [i[0] for i in self.max_pk_CH4]
+            max_ord_CH4 = [i[1] for i in self.max_pk_CH4]
+            
+            # Compute abscissa and ordinate for minimum CH4 peak values
+            min_abs_CH4 = [i[0] for i in self.min_pk_CH4]
+            min_ord_CH4 = [i[1] for i in self.min_pk_CH4]
+            
+            # Compute maximum CO2 peak values
+            plt.plot(max_abs_CO2, max_ord_CO2,'ro')
+            plt.plot(min_abs_CO2, min_ord_CO2,'rx')
+            
+            # Compute maximum CH4 peak values
+            plt.plot(max_abs_CH4, max_ord_CH4,'bo')
+            plt.plot(min_abs_CH4, min_ord_CH4,'bx')
         
         plt.show()
 
