@@ -88,10 +88,10 @@ class CTA():
         for visit in visits_index:
             self.visits.append(Visit(cta.df.loc[visit.astype(np.int32).tolist()]))
     
-    def peaks_detect(self):
+    def peaks_detect(self,delta):
         """
         """
-        
+        pass
     
     def compute_areas(self, data="CH4"):
         """
@@ -119,11 +119,17 @@ class Visit(CTA):
         """
         """
         self.data = df
+        self.y_CO2 = df.CO2.tolist()
+        self.y_CH4 = df.CH4.tolist()
     
-    def peak_detect(self):
+    def peak_detect(self,delta):
         """
         """
+        x = np.arange(0,len(self.y_CH4),1).tolist()
         
+        self.max_pk, self.min_pk = ps.peakdetect(x,self.y_CO2,delta)
+        
+        return self.max_pk, self.min_pk
     
     def compute_area(self, data="CH4"):
         """
@@ -139,7 +145,7 @@ class Visit(CTA):
         
         return area
     
-    def plot_visit(self):
+    def plot_visit(self, show_peaks=False):
         """
         """
         
@@ -149,6 +155,17 @@ class Visit(CTA):
         x = np.arange(0,len(y_CH4),1).tolist()
         
         plt.plot(x, y_CO2, 'r-', x, y_CH4, 'b-')
+        
+        if show_peaks == True:
+            max_abs = [i[0] for i in self.max_pk]
+            max_ord = [i[1] for i in self.max_pk]
+            
+            min_abs = [i[0] for i in self.min_pk]
+            min_ord = [i[1] for i in self.min_pk]
+            
+            plt.plot(max_abs, max_ord,'ro')
+            plt.plot(min_abs, min_ord,'bo')
+        
         plt.show()
 
 
@@ -163,5 +180,8 @@ if __name__ == '__main__':
     
     cta.compute_areas()
     
-    cta.plot_visit(3)
+    cta.visits[0].peak_detect(0.001)
+    
+    cta.visits[0].plot_visit(show_peaks=True)
+    
     cta.visits[0].compute_area()
