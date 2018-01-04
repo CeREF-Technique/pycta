@@ -14,10 +14,13 @@
 import os
 import sys
 
+from config import CSV_PATH
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+import processing as ps
 #from scipy import integrate
 
 class CTA():
@@ -35,21 +38,21 @@ class CTA():
         """
         
     
-    def read_csv_file(self,FILE_PATH):
+    def read_csv_file(self,FILE_NAME):
         """
         Parameters
         ----------
-        FILE_PATH : str
-            String containing the relative path to the csv file.
+        FILE_NAME : str
+            Name of the csv file to read.
     
         Returns
         -------
-            Dataframe containing all visits in the csv file.
+            DataFrame containing all visits in the csv file.
         """
-        FILEPATH = os.path.join(self.CWD, FILE_PATH)
+        FILE_PATH = os.path.join(CSV_PATH, FILE_NAME)
         
         try:
-            self.df = pd.read_csv(FILEPATH,header=1,names=["date","hour","ID","CH4","CO2","weigth","scale"])
+            self.df = pd.read_csv(FILE_PATH,header=1,names=["date","hour","ID","CH4","CO2","weigth","scale"])
         except:
             print "Impossible to read file (check that file exist and is in CSV format)"
     
@@ -95,6 +98,14 @@ class CTA():
         """
         for visit in self.visits:
             self.areas.append(visit.compute_area(data=data))
+    
+    def plot_visit(self, idx):
+        """
+        """
+        try:
+            self.visits[idx].plot_visit()
+        except:
+            print "Index out of range"
 
 
 
@@ -127,17 +138,30 @@ class Visit(CTA):
         area = np.trapz(y, dx=1.0)
         
         return area
+    
+    def plot_visit(self):
+        """
+        """
+        
+        y_CO2 = self.data.CO2.tolist()
+        y_CH4 = self.data.CH4.tolist()
+        
+        x = np.arange(0,len(y_CH4),1).tolist()
+        
+        plt.plot(x, y_CO2, 'r-', x, y_CH4, 'b-')
+        plt.show()
 
 
 if __name__ == '__main__':
     
-    FILE_PATH = r"csv\fichier_demo2.csv"
+    FILE_NAME = "fichier_demo2.csv"
     
     cta = CTA()
-    cta.read_csv_file(FILE_PATH)
+    cta.read_csv_file(FILE_NAME)
     
     cta.split_visits()
     
     cta.compute_areas()
     
-    cta.visits[0].compute_area(plot=True)
+    cta.plot_visit(3)
+    cta.visits[0].compute_area()
