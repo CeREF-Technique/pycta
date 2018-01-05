@@ -12,7 +12,6 @@
 ##########################################################################
 
 import os
-import sys
 
 from config import CSV_PATH
 
@@ -131,7 +130,7 @@ class CTA():
 
 
 
-class Visit(CTA):
+class Visit():
     """
     """
     def __init__(self,df):
@@ -152,7 +151,7 @@ class Visit(CTA):
         x = np.arange(0,len(self.y_CH4),1).tolist()
         
         self.max_pk_CO2, self.min_pk_CO2 = ps.peakdetect(x,self.y_CO2,delta)
-        self.max_pk_CH4, self.min_pk_CH4 = ps.peakdetect(x,self.y_CO2,delta)
+        self.max_pk_CH4, self.min_pk_CH4 = ps.peakdetect(x,self.y_CH4,delta)
     
     def compute_area(self, data="CH4"):
         """
