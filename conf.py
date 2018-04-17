@@ -13,5 +13,14 @@
 
 import os
 
+def get_csv_path():
+    """
+    """
+    CWD = os.getcwd()
+    CSV_PATH = os.path.join(CWD,"csv")
+    
+    return CSV_PATH
+
 CWD = os.getcwd()
 CSV_PATH = os.path.join(CWD,"csv")
+CSV_PATH = r'C:\1_CERISIC\Git\pycta\csv'
