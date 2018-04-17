@@ -23,4 +23,5 @@ def get_csv_path():
 
 CWD = os.getcwd()
 CSV_PATH = os.path.join(CWD,"csv")
-CSV_PATH = r'C:\1_CERISIC\Git\pycta\csv'
+#CSV_PATH = r'C:\Users\Maxim\Documents\GitHub\pycta\csv'
+NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES = 3

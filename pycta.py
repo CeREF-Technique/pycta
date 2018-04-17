@@ -13,7 +13,7 @@
 
 import os
 
-from conf import CSV_PATH
+from conf import CSV_PATH, NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES
 
 import numpy as np
 import pandas as pd
@@ -188,7 +188,8 @@ class Visit():
         ----------
         delta : float
         """
-        x = np.arange(0,len(self.y_CH4),1).tolist()
+        x = np.arange(0,len(self.y_CH4)*NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                      NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
         
         self.max_pk_CO2, self.min_pk_CO2 = ps.peakdetect(x,self.y_CO2,delta)
         self.max_pk_CH4, self.min_pk_CH4 = ps.peakdetect(x,self.y_CH4,delta)
@@ -227,7 +228,8 @@ class Visit():
             Flag set to True if maximum and minimum peak must be displayed.
         """
         
-        x = np.arange(0,len(self.y_CH4),1).tolist()
+        x = np.arange(0,len(self.y_CH4)*NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                      NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
         
         
         ax1 = host_subplot(111, axes_class=AA.Axes)
@@ -236,12 +238,17 @@ class Visit():
         ax2 = ax1.twinx()
         ax3 = ax1.twinx()
         
-        new_fixed_axis = ax3.get_grid_helper().new_fixed_axis
-        ax3.axis["right"] = new_fixed_axis(loc="right",
-                                            axes=ax3,
-                                            offset=(60, 0))
+        new_fixed_axis2 = ax2.get_grid_helper().new_fixed_axis
+        ax2.axis["right"] = new_fixed_axis2(loc="right",
+                                            axes=ax2,
+                                            offset=(0, 0))
         
-        ax3.axis["right"].toggle(all=True)
+        new_fixed_axis3 = ax3.get_grid_helper().new_fixed_axis
+        ax3.axis["right"] = new_fixed_axis3(loc="right",
+                                            axes=ax3,
+                                            offset=(50, 0))
+        
+        #ax3.axis["right"].toggle(all=True)
         
         
         p1, = ax1.plot(x,self.y_CH4,'b-',label="CH4")
@@ -249,15 +256,15 @@ class Visit():
         p3, = ax3.plot(x,self.y_CH4_CO2,'g-',label="CH4/CO2")
         
         
-        ax1.set_xlabel('# samples')
+        ax1.set_xlabel('Seconds')
         ax1.set_ylabel("CH4")
         ax2.set_ylabel("CO2")
         ax3.set_ylabel("CH4/CO2")
         
         
-        ax1.axis["left"].label.set_color(p1.get_color())
-        #ax2.axis["right"].label.set_color(p2.get_color())
-        ax3.axis["right"].label.set_color(p3.get_color())
+        ax1.yaxis.label.set_color(p1.get_color())
+        ax2.yaxis.label.set_color(p2.get_color())
+        ax3.yaxis.label.set_color(p3.get_color())
         
         
         if show_peaks == True:
@@ -307,7 +314,7 @@ class Visit():
 if __name__ == '__main__':
     
     #FILE_NAME = "fichier_demo2.csv"
-    FILE_NAME = "exportFermeCTA_1_5_17.csv"
+    FILE_NAME = "exportFermeCTA_4_5_17.csv"
     
     cta = CTA()
     cta.read_csv_file(FILE_NAME)
