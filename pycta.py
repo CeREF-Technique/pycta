@@ -33,6 +33,7 @@ class CTA():
         """
         self.visits = list()
         self.areas = list()
+        self.mock_visits = list()
         
     def read_csv_folder(FOLDER_PATH):
         """
@@ -115,11 +116,14 @@ class CTA():
         """
         if (stop > len(self.visits)):
             stop = len(self.visits)
-        
-        for i in range(start,stop,step):
-            tmp = self.visits[i]
-            self.mock_visits.append(tmp)
-            #TODO recreate dataframe to concat data to each other
+
+        mock_dataframe = self.visits[start].data
+        for i in range(start+step,stop,step):
+            mock_dataframe = mock_dataframe.append(self.visits[i].data)
+
+        #print mock_dataframe
+        mock_visit = Visit(mock_dataframe)
+        mock_visit.plot_visit(show_areas=True)
     
     def num_visits(self):
         """
@@ -251,8 +255,6 @@ class Visit():
                                             axes=axCH4CO2,
                                             offset=(50, 0))
         
-        #ax3.axis["right"].toggle(all=True)
-        
         
         p1, = axCO2.plot(x,self.y_CO2,'r-',label="CO2")
         p2, = axCH4.plot(x,self.y_CH4,'b-',label="CH4")
@@ -312,7 +314,7 @@ class Visit():
             plt.title("Areas :    CO2 : %.3f    CH4 : %.3f    CH4/CO2 : %.3f" %
                   (self.compute_area("CO2"), self.compute_area("CH4"),
                    self.compute_area("CH4/CO2"))) 
-        
+
         plt.draw()
         plt.show()
 
@@ -321,7 +323,7 @@ class Visit():
 if __name__ == '__main__':
     
     #FILE_NAME = "fichier_demo2.csv"
-    FILE_NAME = "exportFermeCTA_3_5_17.csv"
+    FILE_NAME = "exportFermeCTA_30_4_17.csv"
     
     cta = CTA()
     cta.read_csv_file(FILE_NAME)
@@ -330,12 +332,12 @@ if __name__ == '__main__':
     
     cta.compute_areas()
     cta.drop_visits()
+    cta.mock_visit(0,20)
     
-    cta.peaks_detect(delta=0.001)
+    """cta.peaks_detect(delta=0.001)
     cta.plot_visit(0,show_peaks=True)
     cta.plot_visit(1,show_peaks=True)
     cta.plot_visit(2,show_peaks=True)
-    cta.plot_visit(3,show_peaks=True)
-    
+    cta.plot_visit(3,show_peaks=True)"""
 #    cta.visits[0].plot_visit(show_peaks=True)
 #    cta.visits[0].compute_area()
