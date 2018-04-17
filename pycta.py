@@ -123,6 +123,7 @@ class CTA():
 
         #print mock_dataframe
         mock_visit = Visit(mock_dataframe)
+        mock_visit.filter_data()
         mock_visit.plot_visit(show_areas=True)
     
     def num_visits(self):
@@ -200,6 +201,23 @@ class Visit():
         self.max_pk_CO2, self.min_pk_CO2 = ps.peakdetect(x,self.y_CO2,delta)
         self.max_pk_CH4, self.min_pk_CH4 = ps.peakdetect(x,self.y_CH4,delta)
         self.max_pk_CH4_CO2, self.min_pk_CH4_CO2 = ps.peakdetect(x,self.y_CH4_CO2,delta)
+
+
+    def filter_data(self):
+        """
+            Filters all the data of the visit that doesn't fit inside the max and min values of each curve
+            The values are clipped to the max or the min
+        """
+        data_array = np.arange(len(self.y_CO2))
+        data_array = np.clip(self.y_CO2, MIN_CO2, MAX_CO2)
+        self.y_CO2 = data_array.tolist()
+
+        data_array = np.clip(self.y_CH4, MIN_CH4, MAX_CH4)
+        self.y_CH4 = data_array.tolist()
+
+        data_array = np.clip(self.y_CH4_CO2, MIN_CH4_CO2, MAX_CH4_CO2)
+        self.y_CH4_CO2 = data_array.tolist()
+        
     
     def compute_area(self, data="CH4"):
         """
