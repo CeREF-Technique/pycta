@@ -315,6 +315,7 @@ class Visit():
                   (self.compute_area("CO2"), self.compute_area("CH4"),
                    self.compute_area("CH4/CO2"))) 
 
+        #plt.subplots_adjust(left=0.03,bottom=0.05, right=0.92,top=0.96) # used to export the graphs in PNG on a big screen (24")
         plt.draw()
         plt.show()
 
