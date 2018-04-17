@@ -13,7 +13,7 @@
 
 import os
 
-from conf import CSV_PATH, NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES
+from conf import * # CSV_PATH, NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES, ...
 
 import numpy as np
 import pandas as pd
@@ -22,9 +22,8 @@ from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
 
-
 import processing as ps
-#from scipy import integrate
+
 
 class CTA():
     """
@@ -32,7 +31,6 @@ class CTA():
     def __init__(self):
         """
         """
-        self.CWD = os.getcwd()
         self.visits = list()
         self.areas = list()
         
@@ -92,8 +90,9 @@ class CTA():
         for visit in visits_index:
             self.visits.append(Visit(cta.df.loc[visit.astype(np.int32).tolist()]))
     
-    def drop_visits(self,min_duration=180,max_duration=None,time_step=3):
+    def drop_visits(self,min_duration=180,max_duration=None,time_step=NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES):
         """
+            Exclude some too short or too  long visits
         """
         to_drop = []
         
@@ -108,7 +107,7 @@ class CTA():
                 to_drop.append(self.visits.index(visit))
         
         # Drop visits
-        for i in range(len(to_drop),0,-1):
+        for i in range(len(to_drop)-1,-1,-1):
             self.visits.pop(to_drop[i])
     
     def mock_visit(self,start,stop,step=1):
@@ -118,9 +117,9 @@ class CTA():
             stop = len(self.visits)
         
         for i in range(start,stop,step):
-            tmp = self.visits[0]
-            
+            tmp = self.visits[i]
             self.mock_visits.append(tmp)
+            #TODO recreate dataframe to concat data to each other
     
     def num_visits(self):
         """
@@ -150,7 +149,7 @@ class CTA():
         for visit in self.visits:
             self.areas.append(visit.compute_area(data=data))
     
-    def plot_visit(self, idx, show_peaks=False):
+    def plot_visit(self, idx, show_peaks=False,show_areas=True):
         """
         Plot the given **Visit** curve.
         
@@ -159,9 +158,11 @@ class CTA():
         idx : int
             Index of the **Visit** to plot.
         """
-        try:
-            self.visits[idx].plot_visit(show_peaks=show_peaks)
-        except:
+        if idx >=0 and idx < len(self.visits):
+            #Check that the user enters a valid index
+            self.visits[idx].plot_visit(show_peaks=show_peaks,
+                                        show_areas=show_areas)
+        else:
             print "Index out of range"
 
 
@@ -172,8 +173,9 @@ class CTA():
 class Visit():
     """
     """
-    def __init__(self,df):
+    def __init__(self, df):
         """
+            df : dataframe (from panda)
         """
         self.data = df
         self.y_CO2 = df.CO2.tolist()
@@ -214,11 +216,11 @@ class Visit():
         else:
             return
         
-        area = np.trapz(y, dx=1.0)
+        area = np.trapz(y, dx=NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES)
         
         return area
     
-    def plot_visit(self, show_peaks=False):
+    def plot_visit(self, show_peaks=False, show_areas=True):
         """
         Plot the given **Visit** curve.
         
@@ -232,39 +234,40 @@ class Visit():
                       NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
         
         
-        ax1 = host_subplot(111, axes_class=AA.Axes)
+        axCO2 = host_subplot(111, axes_class=AA.Axes)
         plt.subplots_adjust(right=0.75)
+        axCO2.autoscale()
         
-        ax2 = ax1.twinx()
-        ax3 = ax1.twinx()
+        axCH4 = axCO2.twinx()
+        axCH4CO2 = axCO2.twinx()
         
-        new_fixed_axis2 = ax2.get_grid_helper().new_fixed_axis
-        ax2.axis["right"] = new_fixed_axis2(loc="right",
-                                            axes=ax2,
+        new_fixed_axisCH4 = axCH4.get_grid_helper().new_fixed_axis
+        axCH4.axis["right"] = new_fixed_axisCH4(loc="right",
+                                            axes=axCH4,
                                             offset=(0, 0))
         
-        new_fixed_axis3 = ax3.get_grid_helper().new_fixed_axis
-        ax3.axis["right"] = new_fixed_axis3(loc="right",
-                                            axes=ax3,
+        new_fixed_axis3 = axCH4CO2.get_grid_helper().new_fixed_axis
+        axCH4CO2.axis["right"] = new_fixed_axis3(loc="right",
+                                            axes=axCH4CO2,
                                             offset=(50, 0))
         
         #ax3.axis["right"].toggle(all=True)
         
         
-        p1, = ax1.plot(x,self.y_CH4,'b-',label="CH4")
-        p2, = ax2.plot(x,self.y_CO2,'r-',label="CO2")
-        p3, = ax3.plot(x,self.y_CH4_CO2,'g-',label="CH4/CO2")
+        p1, = axCO2.plot(x,self.y_CO2,'r-',label="CO2")
+        p2, = axCH4.plot(x,self.y_CH4,'b-',label="CH4")
+        p3, = axCH4CO2.plot(x,self.y_CH4_CO2,'g-',label="CH4/CO2")
         
         
-        ax1.set_xlabel('Seconds')
-        ax1.set_ylabel("CH4")
-        ax2.set_ylabel("CO2")
-        ax3.set_ylabel("CH4/CO2")
+        axCO2.set_xlabel('Seconds')
+        axCO2.set_ylabel("CO2")
+        axCH4.set_ylabel("CH4")
+        axCH4CO2.set_ylabel("CH4/CO2")
         
         
-        ax1.yaxis.label.set_color(p1.get_color())
-        ax2.yaxis.label.set_color(p2.get_color())
-        ax3.yaxis.label.set_color(p3.get_color())
+        axCO2.yaxis.label.set_color(p1.get_color())
+        axCH4.yaxis.label.set_color(p2.get_color())
+        axCH4CO2.yaxis.label.set_color(p3.get_color())
         
         
         if show_peaks == True:
@@ -294,17 +297,21 @@ class Visit():
             
             
             # Plot maximum CO2 peak values
-            ax1.plot(max_abs_CO2, max_ord_CO2,'ro')
-            ax1.plot(min_abs_CO2, min_ord_CO2,'rx')
+            axCO2.plot(max_abs_CO2, max_ord_CO2,'ro')
+            axCO2.plot(min_abs_CO2, min_ord_CO2,'rx')
             
             # Plot maximum CH4 peak values
-            ax2.plot(max_abs_CH4, max_ord_CH4,'bo')
-            ax2.plot(min_abs_CH4, min_ord_CH4,'bx')
+            axCH4.plot(max_abs_CH4, max_ord_CH4,'bo')
+            axCH4.plot(min_abs_CH4, min_ord_CH4,'bx')
             
             # Plot maximum CH4/CO2 peak values
-            ax3.plot(max_abs_CH4_CO2, max_ord_CH4_CO2,'go')
-            ax3.plot(min_abs_CH4_CO2, min_ord_CH4_CO2,'gx')
-        
+            axCH4CO2.plot(max_abs_CH4_CO2, max_ord_CH4_CO2,'go')
+            axCH4CO2.plot(min_abs_CH4_CO2, min_ord_CH4_CO2,'gx')
+
+        if show_areas:
+            plt.title("Areas :    CO2 : %.3f    CH4 : %.3f    CH4/CO2 : %.3f" %
+                  (self.compute_area("CO2"), self.compute_area("CH4"),
+                   self.compute_area("CH4/CO2"))) 
         
         plt.draw()
         plt.show()
@@ -314,7 +321,7 @@ class Visit():
 if __name__ == '__main__':
     
     #FILE_NAME = "fichier_demo2.csv"
-    FILE_NAME = "exportFermeCTA_4_5_17.csv"
+    FILE_NAME = "exportFermeCTA_3_5_17.csv"
     
     cta = CTA()
     cta.read_csv_file(FILE_NAME)
@@ -322,6 +329,7 @@ if __name__ == '__main__':
     cta.split_visits()
     
     cta.compute_areas()
+    cta.drop_visits()
     
     cta.peaks_detect(delta=0.001)
     cta.plot_visit(0,show_peaks=True)

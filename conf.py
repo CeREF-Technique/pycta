@@ -13,15 +13,8 @@
 
 import os
 
-def get_csv_path():
-    """
-    """
-    CWD = os.getcwd()
-    CSV_PATH = os.path.join(CWD,"csv")
-    
-    return CSV_PATH
+# Constants for configuration
 
 CWD = os.getcwd()
 CSV_PATH = os.path.join(CWD,"csv")
-#CSV_PATH = r'C:\Users\Maxim\Documents\GitHub\pycta\csv'
-NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES = 3
+NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES = 3.0
