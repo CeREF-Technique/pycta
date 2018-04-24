@@ -32,7 +32,6 @@ class CTA():
         """
         """
         self.visits = list()
-        self.areas = list()
         self.mock_visits = list()
 
     def read_csv_folder(FOLDER_PATH):
@@ -193,7 +192,7 @@ class CTA():
 
         curr_time = 0
         y_pos = axCO2.get_ylim() # [bottom, top]
-        y_pos = y_pos[0]+0.93*(y_pos[1]-y_pos[0]) # set the text at 93 % of the height
+        y_pos = y_pos[0] + 0.93 * (y_pos[1] - y_pos[0]) # set the text at 93 % of the height
         for i in range(len(limits)):
             curr_time += limits[i] * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES
             plt.axvline(x=curr_time, linewidth=0.5, color='#555555')
@@ -232,18 +231,6 @@ class CTA():
             visit.peak_detect(delta=delta)
 
 
-    def compute_areas(self, data="CH4"):
-        """
-        Computes area under each **Visit** curve.
-
-        Parameters
-        ----------
-            data : String (shoudl be : "CH4", "CO2", "CH4_CO2")
-            The choice of the data that must be calculated
-        """
-        for visit in self.visits:
-            self.areas.append(visit.compute_area(data=data))
-
     def plot_visit(self, idx, show_peaks=False, show_areas=True):
         """
         Plot the given **Visit** curve.
@@ -275,6 +262,9 @@ class Visit():
     y_CH4_CO2 = list of the CH4/CO2 amplitudes
     ID = ID of the cow
     scale = ID of the used scale
+    area_CO2 = area of the CO2 curve
+    area_CH4 = area of the CH4 curve
+    area_CH4_CO2 = area of the CH4_CO2 curve
     """
     def __init__(self, df):
         """
@@ -287,9 +277,14 @@ class Visit():
         self.y_CH4_CO2 = [x/y for x,y in zip(self.y_CH4,self.y_CO2)]
         self.ID = df.ID.unique()[0]
         self.scale = df.scale.unique()[0]
+        # areas of each curve
+        self.area_CO2 = 0.0
+        self.area_CH4 = 0.0
+        self.area_CH4_CO2 = 0.0
+        self.compute_area()
         
 
-    def peak_detect(self,delta = 0.001):
+    def peak_detect(self, delta=0.001):
         """
         Detect peak (minimums and maximums) in waveforms.
 
@@ -322,29 +317,19 @@ class Visit():
         data_array = np.clip(self.y_CH4_CO2, MIN_CH4_CO2, MAX_CH4_CO2)
         self.y_CH4_CO2 = data_array.tolist()
 
+        self.compute_area() # re calculate the areas for the new filterd dataset
 
-    def compute_area(self, data="CH4"):
+
+    def compute_area(self):
         """
         Computes area under each **Visit** curve.
-
-        Parameters
-        ----------
-        delta : float
-            Step to consider a point maximum or minimum.
+        The area is calculated with the trapeze method
+        Results are stored into area_CO2, area_CH4 and area_CH4_CO2
         """
+        self.area_CO2 = np.trapz(self.y_CO2, dx=NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES)
+        self.area_CH4 = np.trapz(self.y_CH4, dx=NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES)
+        self.area_CH4_CO2 = np.trapz(self.y_CH4_CO2, dx=NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES)
 
-        if data == "CO2":
-            y = self.y_CO2
-        elif data == "CH4":
-            y = self.y_CH4
-        elif data == "CH4/CO2":
-            y = self.y_CH4_CO2
-        else:
-            return
-
-        area = np.trapz(y, dx=NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES)
-
-        return area
 
     def plot_visit(self, show_peaks=False, show_areas=True, show_ID=False):
         """
@@ -438,8 +423,7 @@ class Visit():
 
         if show_areas:
             plt.title("Areas :    CO2 : %.3f    CH4 : %.3f    CH4/CO2 : %.3f" %
-                  (self.compute_area("CO2"), self.compute_area("CH4"),
-                   self.compute_area("CH4/CO2")))
+                  (self.area_CO2, self.area_CH4, self.area_CH4_CO2))
 
         if show_ID:
             x_pos = x[len(x)/2]
@@ -464,14 +448,13 @@ if __name__ == '__main__':
 
     cta.split_visits()
 
-    #cta.compute_areas()
     cta.drop_visits()
-    cta.mock_visit(20)
+    #cta.mock_visit(20)
 
-    """cta.peaks_detect(delta=0.001)
+    cta.peaks_detect(delta=0.001)
     cta.plot_visit(0,show_peaks=True)
     cta.plot_visit(1,show_peaks=True)
     cta.plot_visit(2,show_peaks=True)
-    cta.plot_visit(3,show_peaks=True)"""
+    cta.plot_visit(3,show_peaks=True)
 #    cta.visits[0].plot_visit(show_peaks=True)
-#    cta.visits[0].compute_area()
+
