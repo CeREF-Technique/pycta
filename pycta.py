@@ -93,7 +93,7 @@ class CTA():
 
     def drop_visits(self, min_duration=180, max_duration=None, time_step=NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES):
         """
-            Exclude some too short or too  long visits
+            Exclude some too short or too long visits
         """
         to_drop = []
 
@@ -113,13 +113,22 @@ class CTA():
 
     def mock_visit(self, nbr_to_plot):
         """
+        Parameters
+        ----------
+        nbr_to_plot : int
+            Number of visits to plot (the nth first visits)
+
+        Returns
+        -------
+            A plot of the nbr_to_plot first visits.
+            With some vertical separators between the visits and the ID and scale of each visit.
         """
+        
         if (nbr_to_plot > len(self.visits)):
             nbr_to_plot = len(self.visits)
             
-        prev_row = {'ID':'0'}
-        data_to_plot = [] #index : 'ID'
-        #print self.df
+        prev_row = {'ID':'0'} 
+        data_to_plot = [] #list of the indexes of the "change ID" of a visit
         for index, row in self.df.iterrows():
             #print row['ID']
             if row['ID'] != prev_row['ID']: # change of animal
@@ -127,30 +136,28 @@ class CTA():
             prev_row = row
 
         prev = 0 # prev index
-        
         for i in data_to_plot:
             if (i - prev) >= 180/NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES: # check if the visit is long enough
-                self.mock_visits.append(Visit(self.df.iloc[prev:i]))
-                nbr_to_plot-=1
-                if nbr_to_plot <=0:
+                self.mock_visits.append(Visit(self.df.iloc[prev:i])) # select only the nbr_to _plot first visits
+                nbr_to_plot -= 1
+                if nbr_to_plot <= 0:
                     break
             prev = i
 
-        labels = []
-        limits = []
-        y_CO2 = list()
-        y_CH4 = list()
+        labels = [] # contain the label of each visit to show on the graphe (ID + scale)
+        limits = [] # The limit of each visit (in samples)
+        y_CO2 = list() # All the data of the CO2 curve (the nth first visits)
+        y_CH4 = list() # All the data of the CH4 curve (the nth first visits)
 
         for visit in self.mock_visits:
             y_CO2.extend(visit.data.CO2.tolist())
             y_CH4.extend(visit.data.CH4.tolist())
-            labels.append(visit.data.ID.unique()[0] + " " +visit.data.scale.unique()[0])
+            labels.append(visit.data.ID.unique()[0] + " " + visit.data.scale.unique()[0])
             limits.append(len(visit.data.CO2.tolist()))
 
-        #print(y_CO2)
         y_CH4_CO2 = [x/y for x,y in zip(y_CH4,y_CO2)]
             
-        x = np.arange(0,len(y_CO2)*NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+        x = np.arange(0, len(y_CO2) * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
                           NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
 
 
@@ -166,22 +173,19 @@ class CTA():
                                             axes=axCH4,
                                             offset=(0, 0))
 
-        new_fixed_axis3 = axCH4CO2.get_grid_helper().new_fixed_axis
-        axCH4CO2.axis["right"] = new_fixed_axis3(loc="right",
+        new_fixed_axisCH4CO2 = axCH4CO2.get_grid_helper().new_fixed_axis
+        axCH4CO2.axis["right"] = new_fixed_axisCH4CO2(loc="right",
                                             axes=axCH4CO2,
                                             offset=(50, 0))
 
-
-        p1, = axCO2.plot(x,y_CO2,'r-',label="CO2")
-        p2, = axCH4.plot(x,y_CH4,'b-',label="CH4")
-        p3, = axCH4CO2.plot(x,y_CH4_CO2,'g-',label="CH4/CO2")
-
+        p1, = axCO2.plot(x, y_CO2, 'r-', label="CO2")
+        p2, = axCH4.plot(x, y_CH4, 'b-', label="CH4")
+        p3, = axCH4CO2.plot(x, y_CH4_CO2, 'g-', label="CH4/CO2")
 
         axCO2.set_xlabel('Seconds')
         axCO2.set_ylabel("CO2")
         axCH4.set_ylabel("CH4")
         axCH4CO2.set_ylabel("CH4/CO2")
-
 
         axCO2.yaxis.label.set_color(p1.get_color())
         axCH4.yaxis.label.set_color(p2.get_color())
@@ -189,54 +193,44 @@ class CTA():
 
         curr_time = 0
         y_pos = axCO2.get_ylim() # [bottom, top]
-        y_pos_h = y_pos[0]+0.97*(y_pos[1]-y_pos[0]) # set the text at 97 % of the height
-        y_pos_l = y_pos[0]+0.93*(y_pos[1]-y_pos[0]) # set the text at 97 % of the height
+        y_pos = y_pos[0]+0.93*(y_pos[1]-y_pos[0]) # set the text at 93 % of the height
         for i in range(len(limits)):
-            curr_time += limits[i]*NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES
+            curr_time += limits[i] * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES
             plt.axvline(x=curr_time, linewidth=0.5, color='#555555')
-            axCO2.text(curr_time-50,y_pos_l,labels[i],ha="right", va="center", size=8,rotation=90)
+            axCO2.text(curr_time - 50, y_pos, labels[i], ha="right", va="center", size=8, rotation=90)
         
-
-        if False:      
-            plt.title("Areas :    CO2 : %.3f    CH4 : %.3f    CH4/CO2 : %.3f" %
-                  (self.compute_area("CO2"), self.compute_area("CH4"),
-                   self.compute_area("CH4/CO2")))
-
-        if False:
-            x_pos = x[len(x)/2]
-            y_pos = axCO2.get_ylim() # [bottom, top]
-            y_pos = y_pos[0]+0.97*(y_pos[1]-y_pos[0]) # set the text at 97 % of the height
-            axCO2.text(x_pos, y_pos, self.ID[0], ha="center", va="center", size=8)
-                    
+        areaCO2 = np.trapz(y_CO2, dx=NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES)
+        areaCH4 = np.trapz(y_CH4, dx=NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES)
+        areaCH4_CO2 = np.trapz(y_CH4_CO2, dx=NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES)
+        plt.title("Areas :    CO2 : %.3f    CH4 : %.3f    CH4/CO2 : %.3f" %
+                (areaCO2, areaCH4, areaCH4_CO2))
 
         plt.subplots_adjust(left=0.03,bottom=0.05, right=0.92,top=0.96) # used to export the graphs in PNG on a big screen (24")
         plt.draw()
         plt.show()
-        
-        """
-        mock_dataframe = self.visits[start].data
-        for i in range(start+step, stop, step):
-            mock_dataframe = mock_dataframe.append(self.visits[i].data)
-        """
-
-
 
     
     def num_visits(self):
         """
+        Returns
+        -------
+            Prints the number of visits
         """
         print len(self.visits)
 
-    def peaks_detect(self,delta = 0.001):
+
+    def peaks_detect(self, delta=0.001):
         """
         Detect peak (minimums and maximums) in waveforms.
 
         Parameters
         ----------
-        delta : float
+            delta : float
+            Used to detect the minimums and maximums
         """
         for visit in self.visits:
             visit.peak_detect(delta=delta)
+
 
     def compute_areas(self, data="CH4"):
         """
@@ -244,8 +238,8 @@ class CTA():
 
         Parameters
         ----------
-        delta : float
-            Step to consider a point maximum or minimum.
+            data : String (shoudl be : "CH4", "CO2", "CH4_CO2")
+            The choice of the data that must be calculated
         """
         for visit in self.visits:
             self.areas.append(visit.compute_area(data=data))
@@ -256,11 +250,11 @@ class CTA():
 
         Parameters
         ----------
-        idx : int
+            idx : int
             Index of the **Visit** to plot.
             
         """
-        if idx >=0 and idx < len(self.visits):
+        if idx >= 0 and idx < len(self.visits):
             #Check that the user enters a valid index
             self.visits[idx].plot_visit(show_peaks=show_peaks,
                                         show_areas=show_areas)
@@ -274,16 +268,25 @@ class CTA():
 
 class Visit():
     """
+    Descibes a visit.
+    Has a data (Pandas.DataFrame)
+    y_CO2 = list of the CO2 amplitudes
+    y_CH4 = list of the CH4 amplitudes
+    y_CH4_CO2 = list of the CH4/CO2 amplitudes
+    ID = ID of the cow
+    scale = ID of the used scale
     """
     def __init__(self, df):
         """
             df : dataframe (from panda)
+            dataframe for one visit
         """
         self.data = df
         self.y_CO2 = df.CO2.tolist()
         self.y_CH4 = df.CH4.tolist()
         self.y_CH4_CO2 = [x/y for x,y in zip(self.y_CH4,self.y_CO2)]
-        self.ID = df.ID.unique()
+        self.ID = df.ID.unique()[0]
+        self.scale = df.scale.unique()[0]
         
 
     def peak_detect(self,delta = 0.001):
@@ -292,22 +295,24 @@ class Visit():
 
         Parameters
         ----------
-        delta : float
+            delta : float
         """
-        x = np.arange(0,len(self.y_CH4)*NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+        x = np.arange(0, len(self.y_CH4) * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
                       NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
 
-        self.max_pk_CO2, self.min_pk_CO2 = ps.peakdetect(x,self.y_CO2,delta)
-        self.max_pk_CH4, self.min_pk_CH4 = ps.peakdetect(x,self.y_CH4,delta)
-        self.max_pk_CH4_CO2, self.min_pk_CH4_CO2 = ps.peakdetect(x,self.y_CH4_CO2,delta)
+        self.max_pk_CO2, self.min_pk_CO2 = ps.peakdetect(x,self.y_CO2, delta)
+        self.max_pk_CH4, self.min_pk_CH4 = ps.peakdetect(x,self.y_CH4, delta)
+        self.max_pk_CH4_CO2, self.min_pk_CH4_CO2 = ps.peakdetect(x,self.y_CH4_CO2, delta)
 
 
     def filter_data(self):
         """
             Filters all the data of the visit that doesn't fit inside the max and min values of each curve
             The values are clipped to the max or the min
+
+            NB : MIN and MAX values are defined into the conf.py file
         """
-        data_array = np.arange(len(self.y_CO2))
+        data_array = np.arange(len(self.y_CO2)) # initialize the data_array to the right length
         data_array = np.clip(self.y_CO2, MIN_CO2, MAX_CO2)
         self.y_CO2 = data_array.tolist()
 
@@ -355,7 +360,7 @@ class Visit():
             Flag set to True to show the ID of the visit(s)
         """
 
-        x = np.arange(0,len(self.y_CH4)*NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+        x = np.arange(0, len(self.y_CH4) * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
                       NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
 
 
@@ -371,15 +376,15 @@ class Visit():
                                             axes=axCH4,
                                             offset=(0, 0))
 
-        new_fixed_axis3 = axCH4CO2.get_grid_helper().new_fixed_axis
-        axCH4CO2.axis["right"] = new_fixed_axis3(loc="right",
+        new_fixed_axisCH4CO2 = axCH4CO2.get_grid_helper().new_fixed_axis
+        axCH4CO2.axis["right"] = new_fixed_axisCH4CO2(loc="right",
                                             axes=axCH4CO2,
                                             offset=(50, 0))
 
 
-        p1, = axCO2.plot(x,self.y_CO2,'r-',label="CO2")
-        p2, = axCH4.plot(x,self.y_CH4,'b-',label="CH4")
-        p3, = axCH4CO2.plot(x,self.y_CH4_CO2,'g-',label="CH4/CO2")
+        p1, = axCO2.plot(x, self.y_CO2, 'r-', label="CO2")
+        p2, = axCH4.plot(x, self.y_CH4, 'b-', label="CH4")
+        p3, = axCH4CO2.plot(x, self.y_CH4_CO2, 'g-', label="CH4/CO2")
 
 
         axCO2.set_xlabel('Seconds')
@@ -420,16 +425,16 @@ class Visit():
 
 
             # Plot maximum CO2 peak values
-            axCO2.plot(max_abs_CO2, max_ord_CO2,'ro')
-            axCO2.plot(min_abs_CO2, min_ord_CO2,'rx')
+            axCO2.plot(max_abs_CO2, max_ord_CO2, 'ro')
+            axCO2.plot(min_abs_CO2, min_ord_CO2, 'rx')
 
             # Plot maximum CH4 peak values
-            axCH4.plot(max_abs_CH4, max_ord_CH4,'bo')
-            axCH4.plot(min_abs_CH4, min_ord_CH4,'bx')
+            axCH4.plot(max_abs_CH4, max_ord_CH4, 'bo')
+            axCH4.plot(min_abs_CH4, min_ord_CH4, 'bx')
 
             # Plot maximum CH4/CO2 peak values
-            axCH4CO2.plot(max_abs_CH4_CO2, max_ord_CH4_CO2,'go')
-            axCH4CO2.plot(min_abs_CH4_CO2, min_ord_CH4_CO2,'gx')
+            axCH4CO2.plot(max_abs_CH4_CO2, max_ord_CH4_CO2, 'go')
+            axCH4CO2.plot(min_abs_CH4_CO2, min_ord_CH4_CO2, 'gx')
 
         if show_areas:
             plt.title("Areas :    CO2 : %.3f    CH4 : %.3f    CH4/CO2 : %.3f" %
@@ -439,7 +444,7 @@ class Visit():
         if show_ID:
             x_pos = x[len(x)/2]
             y_pos = axCO2.get_ylim() # [bottom, top]
-            y_pos = y_pos[0]+0.97*(y_pos[1]-y_pos[0]) # set the text at 97 % of the height
+            y_pos = y_pos[0] + 0.97*(y_pos[1] - y_pos[0]) # set the text at 97 % of the height
             axCO2.text(x_pos, y_pos, self.ID[0], ha="center", va="center", size=8)
                     
 
