@@ -52,13 +52,13 @@ def peakdetect(x_wave,y_wave,delta):
     y_wave = asarray(y_wave)
     
     if len(y_wave) != len(x_wave):
-        sys.exit('Input vectors v and x must have same length')
+        raise ValueError, 'Input vectors v and x must have same length'
     
     if not isscalar(delta):
-        sys.exit('Input argument delta must be a scalar')
+        raise ValueError, 'Input argument delta must be a scalar'
     
     if delta <= 0:
-        sys.exit('Input argument delta must be positive')
+        raise ValueError, 'Input argument delta must be positive'
     
     mn, mx = Inf, -Inf
     mnpos, mxpos = NaN, NaN

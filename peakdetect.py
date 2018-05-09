@@ -132,7 +132,7 @@ def peakdetect(y_axis, x_axis = None, lookahead = 300, delta=0):
             mnpos = x
         
         ####look for max####
-        if y < mx-delta and mx != np.Inf:
+        if y < mx-delta and mx != np.Inf and index !=1 :
             #Maxima peak candidate found
             #look ahead in signal to ensure that this is a peak and not jitter
             if y_axis[index:index+lookahead].max() < mx:
