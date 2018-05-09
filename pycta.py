@@ -39,7 +39,7 @@ class CTA():
         """
 
 
-    def read_csv_file(self,FILE_NAME):
+    def read_csv_file(self, FILE_NAME):
         """
         Parameters
         ----------
@@ -56,6 +56,7 @@ class CTA():
             self.df = pd.read_csv(FILE_PATH,header=1,names=["date","hour","ID","CH4","CO2","weigth","scale"])
         except:
             print "Impossible to read file (check that file exist and is in CSV format)"
+
 
     def split_visits(self):
         """
@@ -90,6 +91,7 @@ class CTA():
         for visit in visits_index:
             self.visits.append(Visit(cta.df.loc[visit.astype(np.int32).tolist()]))
 
+
     def drop_visits(self, min_duration=180, max_duration=None, time_step=NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES):
         """
             Exclude some too short or too long visits
@@ -109,6 +111,7 @@ class CTA():
         # Drop visits
         for i in range(len(to_drop)-1,-1,-1):
             self.visits.pop(to_drop[i])
+
 
     def mock_visit(self, nbr_to_plot):
         """

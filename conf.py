@@ -20,11 +20,11 @@ CSV_PATH = os.path.join(CWD, "csv")
 NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES = 3.0
 
 # Maximums and minimums for each curve
-MAX_CO2 = 20#1.25
-MIN_CO2 = 0 #0.25
+MAX_CO2 = 1.7
+MIN_CO2 = 0.25
 
-MAX_CH4 = 20 #0.11
-MIN_CH4 = 0 #0.02
+MAX_CH4 = 0.2
+MIN_CH4 = 0.02
 
-MAX_CH4_CO2 = 20 #0.5
-MIN_CH4_CO2 = 0 #0.1
+MAX_CH4_CO2 = MAX_CH4 / MAX_CO2
+MIN_CH4_CO2 = 0.1
