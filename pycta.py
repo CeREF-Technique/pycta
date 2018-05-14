@@ -92,7 +92,7 @@ class CTA():
             self.visits.append(Visit(cta.df.loc[visit.astype(np.int32).tolist()]))
 
 
-    def drop_visits(self, min_duration=180, max_duration=None, time_step=NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES):
+    def drop_visits(self, min_duration=MIN_VISIT_DURATION, max_duration=None, time_step=NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES):
         """
             Exclude some too short or too long visits
         """
@@ -111,6 +111,9 @@ class CTA():
         # Drop visits
         for i in range(len(to_drop)-1,-1,-1):
             self.visits.pop(to_drop[i])
+
+
+                
 
 
     def mock_visit(self, nbr_to_plot):
@@ -139,7 +142,7 @@ class CTA():
 
         prev = 0 # prev index
         for i in data_to_plot:
-            if (i - prev) >= 180/NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES: # check if the visit is long enough
+            if (i - prev) >= MIN_VISIT_DURATION/NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES: # check if the visit is long enough
                 self.mock_visits.append(Visit(self.df.iloc[prev:i])) # select only the nbr_to _plot first visits
                 nbr_to_plot -= 1
                 if nbr_to_plot <= 0:
@@ -250,6 +253,11 @@ class CTA():
                                         show_areas=show_areas)
         else:
             print "Index out of range"
+    def export_results(self):
+        """
+            Export the result to a csv file.
+            1 line = one visit
+        """
 
 
 
@@ -277,9 +285,20 @@ class Visit():
         self.data = df
         self.y_CO2 = df.CO2.tolist()
         self.y_CH4 = df.CH4.tolist()
-        self.y_CH4_CO2 = [x/y for x,y in zip(self.y_CH4,self.y_CO2)]
         self.ID = df.ID.unique()[0]
         self.scale = df.scale.unique()[0]
+        self.len_CO2 = len(self.y_CO2)
+        self.len_CH4 = len(self.y_CH4)
+        
+        self.delete_begin_visit()
+        self.clip_data()
+        if self.len_CO2 == self.len_CH4:
+            self.y_CH4_CO2 = [x/y for x,y in zip(self.y_CH4,self.y_CO2)]
+        elif self.len_CO2 > self.len_CH4:
+            self.y_CH4_CO2 = [x/y for x,y in zip(self.y_CH4,self.y_CO2[-self.len_CH4:])] # take the last elements for the CO2 array which is greater than the CH4 array
+        else : # self.len_CO2 < len(self.y_CH4)
+            self.y_CH4_CO2 = [x/y for x,y in zip(self.y_CH4[-self.len_CO2:],self.y_CO2)] # take the last elements for the CH4 array which is greater than the CO2 array       
+        
         # areas of each curve
         self.area_CO2 = 0.0
         self.area_CH4 = 0.0
@@ -295,32 +314,81 @@ class Visit():
         ----------
             delta : float
         """
-        x = np.arange(0, len(self.y_CH4) * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
-                      NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
 
-        self.max_pk_CO2, self.min_pk_CO2 = ps.peakdetect(x,self.y_CO2, delta)
-        self.max_pk_CH4, self.min_pk_CH4 = ps.peakdetect(x,self.y_CH4, delta)
-        self.max_pk_CH4_CO2, self.min_pk_CH4_CO2 = ps.peakdetect(x,self.y_CH4_CO2, delta)
+        if self.len_CH4 == self.len_CO2:
+            x_CH4 = np.arange(0, self.len_CH4 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+            x_CO2 = np.arange(0, self.len_CO2 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+            x_CH4CO2 = np.arange(0, self.len_CH4 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+            
+        elif self.len_CO2 > self.len_CH4:
+            start_time = (self.len_CO2 - self.len_CH4) * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES
+            x_CH4 = np.arange(start_time, self.len_CO2 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+            x_CO2 = np.arange(0, self.len_CO2 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+            x_CH4CO2 = np.arange(start_time, self.len_CO2 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+            
+        else: # self.len_CO2 < self.len_CH4
+            start_time = (self.len_CH4 - self.len_CO2) * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES
+            x_CH4 = np.arange(0, self.len_CH4 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+            x_CO2 = np.arange(start_time, self.len_CH4 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+            x_CH4CO2 = np.arange(start_time, self.len_CH4 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+
+        self.max_pk_CO2, self.min_pk_CO2 = ps.peakdetect(x_CO2, self.y_CO2, delta)
+        self.max_pk_CH4, self.min_pk_CH4 = ps.peakdetect(x_CH4 ,self.y_CH4, delta)
+        self.max_pk_CH4_CO2, self.min_pk_CH4_CO2 = ps.peakdetect(x_CH4CO2, self.y_CH4_CO2, delta)
 
 
-    def filter_data(self):
+    def delete_begin_visit(self, delete_duration_co2=DELETE_SECONDS_CO2, delete_duration_ch4=DELETE_SECONDS_CH4):
+        """
+        Parameters
+        ----------
+        delete_duration_co2 : int
+            Number of seconds to delete at the begining of the visit for the CO2
+        delete_duration_ch4 : int
+             Number of seconds to delete at the begining of the visit for the CH4
+        """
+        nbr_of_pts_to_delete_co2 = int(np.trunc(delete_duration_co2 / NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES))
+        nbr_of_pts_to_delete_ch4 = int(np.trunc(delete_duration_ch4 / NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES))
+        min_samples = int(np.trunc(MIN_VISIT_DURATION / NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES))
+
+        if self.len_CO2 > min_samples: # First check if the visit will not be deleted when filtering
+            if self.len_CO2 > nbr_of_pts_to_delete_co2: # Second, chek if there is enough points to delete
+                for i in range(nbr_of_pts_to_delete_co2):
+                    del self.y_CO2[i]
+                self.len_CO2 = len(self.y_CO2) # update the CO2 lenght
+            else:
+                 print "not enough points to delete a the begining of the visit for the ID : ", self.ID ," in the CO2 samples"      
+            if self.len_CH4 > nbr_of_pts_to_delete_ch4:
+                for i in range(nbr_of_pts_to_delete_ch4):
+                    del self.y_CH4[i]
+                self.len_CH4 = len(self.y_CH4) # update the CH4 lenght
+            else:
+                print "not enough points to delete a the begining of the visit for the ID : ", self.ID," in the CH4 samples"
+        
+        
+
+    def clip_data(self):
         """
             Filters all the data of the visit that doesn't fit inside the max and min values of each curve
             The values are clipped to the max or the min
 
             NB : MIN and MAX values are defined into the conf.py file
         """
-        data_array = np.arange(len(self.y_CO2)) # initialize the data_array to the right length
+        data_array = np.arange(self.len_CO2) # initialize the data_array to the right length
         data_array = np.clip(self.y_CO2, MIN_CO2, MAX_CO2)
         self.y_CO2 = data_array.tolist()
 
+        data_array = np.arange(self.len_CH4) # initialize the data_array to the right length
         data_array = np.clip(self.y_CH4, MIN_CH4, MAX_CH4)
         self.y_CH4 = data_array.tolist()
-
-        data_array = np.clip(self.y_CH4_CO2, MIN_CH4_CO2, MAX_CH4_CO2)
-        self.y_CH4_CO2 = data_array.tolist()
-
-        self.compute_area() # re calculate the areas for the new filterd dataset
 
 
     def compute_area(self):
@@ -347,10 +415,32 @@ class Visit():
         show_ID : bool
             Flag set to True to show the ID of the visit(s)
         """
-
-        x = np.arange(0, len(self.y_CH4) * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
-                      NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
-
+        if self.len_CH4 == self.len_CO2:
+            x_CH4 = np.arange(0, self.len_CH4 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+            x_CO2 = np.arange(0, self.len_CO2 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+            x_CH4CO2 = np.arange(0, self.len_CH4 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+            
+        elif self.len_CO2 > self.len_CH4:
+            start_time = (self.len_CO2 - self.len_CH4) * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES
+            x_CH4 = np.arange(start_time, self.len_CO2 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+            x_CO2 = np.arange(0, self.len_CO2 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+            x_CH4CO2 = np.arange(start_time, self.len_CO2 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+            
+        else: # self.len_CO2 < self.len_CH4
+            start_time = (self.len_CH4 - self.len_CO2) * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES
+            x_CH4 = np.arange(0, self.len_CH4 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+            x_CO2 = np.arange(start_time, self.len_CH4 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+            x_CH4CO2 = np.arange(start_time, self.len_CH4 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES,
+                          NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES).tolist()
+            
 
         axCO2 = host_subplot(111, axes_class=AA.Axes)
         plt.subplots_adjust(right=0.75)
@@ -370,9 +460,9 @@ class Visit():
                                             offset=(50, 0))
 
 
-        p1, = axCO2.plot(x, self.y_CO2, 'r-', label="CO2")
-        p2, = axCH4.plot(x, self.y_CH4, 'b-', label="CH4")
-        p3, = axCH4CO2.plot(x, self.y_CH4_CO2, 'g-', label="CH4/CO2")
+        p1, = axCO2.plot(x_CO2, self.y_CO2, 'r-', label="CO2")
+        p2, = axCH4.plot(x_CH4, self.y_CH4, 'b-', label="CH4")
+        p3, = axCH4CO2.plot(x_CH4CO2, self.y_CH4_CO2, 'g-', label="CH4/CO2")
 
 
         axCO2.set_xlabel('Seconds')
