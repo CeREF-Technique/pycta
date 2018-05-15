@@ -62,11 +62,14 @@ def peakdetect(x_wave,y_wave,delta):
     
     mn, mx = Inf, -Inf
     mnpos, mxpos = NaN, NaN
-
-    if y_wave[0] < y_wave[1]: # MxD : incrasing curve
-        lookformax = True
+    
+    if len(y_wave)>1:
+        if y_wave[0] < y_wave[1]: # MxD : incrasing curve
+            lookformax = True
+        else:
+            lookformax = False
     else:
-        lookformax = False
+        lookformax = True
         
     for i in arange(len(y_wave)):
         this = y_wave[i]

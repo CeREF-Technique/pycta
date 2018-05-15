@@ -26,14 +26,13 @@ MIN_VISIT_DURATION = 180
 # Number of seconds to delete at the begining of the visit (in seconds)
 # if these are not the same the CH4/CO2 value will take the longest in consideration
 DELETE_SECONDS_CO2 = 30
-DELETE_SECONDS_CH4 = 90
+DELETE_SECONDS_CH4 = 30
 
 # Maximums for each curve, in absolute
 MAX_CO2 = 1.7
 MAX_CH4 = 0.2
 
 # Minimums for each curve, in relatve (in percentile)
-MIN_CO2 = 0.05
-MIN_CH4 = 0.05
-# MxD : NOT DONE YET
+MIN_PERCENTILE_CO2 = 5 # in %
+MIN_PERCENTILE_CH4 = 5
 

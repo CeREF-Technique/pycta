@@ -420,12 +420,16 @@ class Visit():
 
             NB : MIN and MAX values are defined into the conf.py file
         """
+        
+        percentil_CO2 = np.percentile(self.y_CO2,MIN_PERCENTILE_CO2)
+        percentil_CH4 = np.percentile(self.y_CH4,MIN_PERCENTILE_CH4)
+        
         data_array = np.arange(self.len_CO2) # initialize the data_array to the right length
-        data_array = np.clip(self.y_CO2, MIN_CO2, MAX_CO2)
+        data_array = np.clip(self.y_CO2, percentil_CO2, MAX_CO2)
         self.y_CO2 = data_array.tolist()
 
         data_array = np.arange(self.len_CH4) # initialize the data_array to the right length
-        data_array = np.clip(self.y_CH4, MIN_CH4, MAX_CH4)
+        data_array = np.clip(self.y_CH4, percentil_CH4, MAX_CH4)
         self.y_CH4 = data_array.tolist()
 
 
@@ -572,16 +576,18 @@ class Visit():
 if __name__ == '__main__':
 
     #FILE_NAME = "fichier_demo2.csv"
-    FILE_NAME = "exportFermeCTA_4_5_17.csv"
+    dates = ["1_5_17","2_5_17","3_5_17","4_5_17","27_4_17","28_4_17","29_4_17","30_4_17"]
+    for d in dates:
+        FILE_NAME = "exportFermeCTA_" + d + ".csv"
 
-    cta = CTA()
-    cta.read_csv_file(FILE_NAME)
+        cta = CTA()
+        cta.read_csv_file(FILE_NAME)
 
-    cta.split_visits()
-
-    cta.drop_visits()
+        cta.split_visits()
+        cta.drop_visits()
+        cta.export_results("exportFermeCTA_" + d + "_Summary.csv")
+        
     #cta.mock_visit(20)
-    cta.export_results()
     #cta.peaks_detect(delta=0.001)
     #cta.plot_visit(0,show_peaks=True)
     """ cta.plot_visit(1,show_peaks=True)
