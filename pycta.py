@@ -253,11 +253,38 @@ class CTA():
                                         show_areas=show_areas)
         else:
             print "Index out of range"
-    def export_results(self):
+
+            
+    def export_results(self, filename="exportedData.csv"):
         """
             Export the result to a csv file.
             1 line = one visit
+
+            ["date","hour","ID","CH4","CO2","weigth","scale"]
         """
+        data = []
+        cols = ['ID', 'Date', 'Hour', 'Visit Duration (s)', 'Weight (kg)', 'Scale', 'CO2 Area',
+                       'CH4 Area', 'CH4/CO2 Area', '# Min Peaks CO2', '# Max Peaks CO2',
+                       '# Min Peaks CH4', '# Max Peaks CH4', '# Min Peaks CH4/CO2',
+                       '# Max Peaks CH4/CO2']
+        for v in self.visits:
+           data.append({'01_ID':v.ID,
+                       '02_Date':v.date,
+                       '03_Hour':v.hour,
+                       '04_Visit Duration (s)':v.visit_duration,
+                       '05_Weight (kg)':v.weigth,
+                       '06_Scale':v.scale,
+                       '07_CO2 Area':v.area_CO2,
+                       '08_CH4 Area':v.area_CH4,
+                       '09_CH4/CO2 Area':v.area_CH4_CO2,
+                       '10_# Min Peaks CO2':v.nbr_min_pks_CO2,
+                       '11_# Max Peaks CO2':v.nbr_max_pks_CO2,
+                       '12_# Min Peaks CH4':v.nbr_min_pks_CH4,
+                       '13_# Max Peaks CH4':v.nbr_max_pks_CH4,
+                       '14_# Min Peaks CH4/CO2':v.nbr_min_pks_CH4_CO2,
+                       '15_# Max Peaks CH4/CO2':v.nbr_max_pks_CH4_CO2})
+        to_export = pd.DataFrame(data)
+        to_export.to_csv(filename, sep=";", decimal=",")
 
 
 
@@ -287,8 +314,12 @@ class Visit():
         self.y_CH4 = df.CH4.tolist()
         self.ID = df.ID.unique()[0]
         self.scale = df.scale.unique()[0]
+        self.weigth = df.weigth.values[0]
+        self.date = df.date.values[0]
+        self.hour = df.hour.values[0]
         self.len_CO2 = len(self.y_CO2)
         self.len_CH4 = len(self.y_CH4)
+        self.visit_duration = self.len_CO2 * NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES
         
         self.delete_begin_visit()
         self.clip_data()
@@ -298,12 +329,11 @@ class Visit():
             self.y_CH4_CO2 = [x/y for x,y in zip(self.y_CH4,self.y_CO2[-self.len_CH4:])] # take the last elements for the CO2 array which is greater than the CH4 array
         else : # self.len_CO2 < len(self.y_CH4)
             self.y_CH4_CO2 = [x/y for x,y in zip(self.y_CH4[-self.len_CO2:],self.y_CO2)] # take the last elements for the CH4 array which is greater than the CO2 array       
+
         
-        # areas of each curve
-        self.area_CO2 = 0.0
-        self.area_CH4 = 0.0
-        self.area_CH4_CO2 = 0.0
+
         self.compute_area()
+        self.peak_detect()
         
 
     def peak_detect(self, delta=0.001):
@@ -344,6 +374,14 @@ class Visit():
         self.max_pk_CO2, self.min_pk_CO2 = ps.peakdetect(x_CO2, self.y_CO2, delta)
         self.max_pk_CH4, self.min_pk_CH4 = ps.peakdetect(x_CH4 ,self.y_CH4, delta)
         self.max_pk_CH4_CO2, self.min_pk_CH4_CO2 = ps.peakdetect(x_CH4CO2, self.y_CH4_CO2, delta)
+
+        
+        self.nbr_max_pks_CO2 = len(self.max_pk_CO2)
+        self.nbr_min_pks_CO2 = len(self.min_pk_CO2)
+        self.nbr_max_pks_CH4 = len(self.max_pk_CH4)
+        self.nbr_min_pks_CH4 = len(self.min_pk_CH4)
+        self.nbr_max_pks_CH4_CO2 = len(self.max_pk_CH4_CO2)
+        self.nbr_min_pks_CH4_CO2 = len(self.min_pk_CH4_CO2)
 
 
     def delete_begin_visit(self, delete_duration_co2=DELETE_SECONDS_CO2, delete_duration_ch4=DELETE_SECONDS_CH4):
@@ -543,11 +581,11 @@ if __name__ == '__main__':
 
     cta.drop_visits()
     #cta.mock_visit(20)
-
-    cta.peaks_detect(delta=0.001)
-    cta.plot_visit(0,show_peaks=True)
-    cta.plot_visit(1,show_peaks=True)
+    cta.export_results()
+    #cta.peaks_detect(delta=0.001)
+    #cta.plot_visit(0,show_peaks=True)
+    """ cta.plot_visit(1,show_peaks=True)
     cta.plot_visit(2,show_peaks=True)
-    cta.plot_visit(3,show_peaks=True)
+    cta.plot_visit(3,show_peaks=True)"""
 #    cta.visits[0].plot_visit(show_peaks=True)
 
