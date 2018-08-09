@@ -28,11 +28,17 @@ MIN_VISIT_DURATION = 180
 DELETE_SECONDS_CO2 = 30
 DELETE_SECONDS_CH4 = 30
 
-# Maximums for each curve, in absolute
-MAX_CO2 = 1.7
-MAX_CH4 = 0.2
+# Maximums for each curve, in absolute, per scale (B01, B02)
+MAX_CO2_B01 = 1.7
+MAX_CO2_B02 = 1.7
 
-# Minimums for each curve, in relatve (in percentile)
-MIN_PERCENTILE_CO2 = 5 # in %
-MIN_PERCENTILE_CH4 = 5
+MAX_CH4_B01 = 0.2
+MAX_CH4_B02 = 0.2
+
+# Minimums for each curve, in relatve (in percentile), per scale (B01, B02)
+MIN_PERCENTILE_CO2_B01 = 5 # in %
+MIN_PERCENTILE_CO2_B02 = 5
+
+MIN_PERCENTILE_CH4_B01 = 5 # in %
+MIN_PERCENTILE_CH4_B02 = 5
 

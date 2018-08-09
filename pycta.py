@@ -53,7 +53,7 @@ class CTA():
         FILE_PATH = os.path.join(CSV_PATH, FILE_NAME)
 
         try:
-            self.df = pd.read_csv(FILE_PATH,header=1,names=["date","hour","ID","CH4","CO2","weigth","scale"])
+            self.df = pd.read_csv(FILE_PATH, header=1, names=["date","hour","ID","CH4","CO2","weigth","scale"])
         except:
             print "Impossible to read file (check that file exist and is in CSV format)"
 
@@ -80,7 +80,7 @@ class CTA():
             index_array = unique_grp.index.values
 
             # Split array in visits based on index consecutive indices
-            splits = np.append(np.where(np.diff(index_array) != 1)[0],len(index_array)+1)+1
+            splits = np.append(np.where(np.diff(index_array) != 1)[0], len(index_array) + 1) + 1
 
             #Split data n visits
             for split in splits:
@@ -100,7 +100,7 @@ class CTA():
 
         for visit in self.visits:
             # Compute visit duration
-            visit_duration = len(visit.y_CH4)*time_step
+            visit_duration = len(visit.y_CH4) * time_step
 
             # If visit duration is smaller than minimal duration
             if (visit_duration < min_duration):
@@ -109,7 +109,7 @@ class CTA():
                 to_drop.append(self.visits.index(visit))
 
         # Drop visits
-        for i in range(len(to_drop)-1,-1,-1):
+        for i in range(len(to_drop) -1, -1, -1):
             self.visits.pop(to_drop[i])
 
 
@@ -142,7 +142,7 @@ class CTA():
 
         prev = 0 # prev index
         for i in data_to_plot:
-            if (i - prev) >= MIN_VISIT_DURATION/NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES: # check if the visit is long enough
+            if (i - prev) >= MIN_VISIT_DURATION / NBR_OF_SECONDS_BETWEEN_TWO_SAMPLES: # check if the visit is long enough
                 self.mock_visits.append(Visit(self.df.iloc[prev:i])) # select only the nbr_to _plot first visits
                 nbr_to_plot -= 1
                 if nbr_to_plot <= 0:
@@ -403,33 +403,45 @@ class Visit():
                     del self.y_CO2[i]
                 self.len_CO2 = len(self.y_CO2) # update the CO2 lenght
             else:
-                 print "not enough points to delete a the begining of the visit for the ID : ", self.ID ," in the CO2 samples"      
+                 print "not enough points to delete a the begining of the visit for the ID : ", self.ID , " in the CO2 samples"      
             if self.len_CH4 > nbr_of_pts_to_delete_ch4:
                 for i in range(nbr_of_pts_to_delete_ch4):
                     del self.y_CH4[i]
                 self.len_CH4 = len(self.y_CH4) # update the CH4 lenght
             else:
-                print "not enough points to delete a the begining of the visit for the ID : ", self.ID," in the CH4 samples"
+                raise "not enough points to delete a the begining of the visit for the ID : ", self.ID, " in the CH4 samples"
         
         
 
     def clip_data(self):
-        """
+        """ 
             Filters all the data of the visit that doesn't fit inside the max and min values of each curve
             The values are clipped to the max or the min
 
             NB : MIN and MAX values are defined into the conf.py file
         """
-        
-        percentil_CO2 = np.percentile(self.y_CO2,MIN_PERCENTILE_CO2)
-        percentil_CH4 = np.percentile(self.y_CH4,MIN_PERCENTILE_CH4)
+        if self.scale == "B01":
+            min_CO2 = MIN_PERCENTILE_CO2_B01
+            min_CH4 = MIN_PERCENTILE_CH4_B01
+            max_CO2 = MAX_CO2_B01
+            max_CH4 = MAX_CH4_B01
+        elif self.scale == "B02":
+            min_CO2 = MIN_PERCENTILE_CO2_B02
+            min_CH4 = MIN_PERCENTILE_CH4_B02
+            max_CO2 = MAX_CO2_B02
+            max_CH4 = MAX_CH4_B02
+        else:
+            print "Scale not found correctly. Expected B01 or B02 but has", self.scale
+            
+        percentil_CO2 = np.percentile(self.y_CO2, min_CO2)
+        percentil_CH4 = np.percentile(self.y_CH4, min_CH4)
         
         data_array = np.arange(self.len_CO2) # initialize the data_array to the right length
-        data_array = np.clip(self.y_CO2, percentil_CO2, MAX_CO2)
+        data_array = np.clip(self.y_CO2, percentil_CO2, max_CO2)
         self.y_CO2 = data_array.tolist()
 
         data_array = np.arange(self.len_CH4) # initialize the data_array to the right length
-        data_array = np.clip(self.y_CH4, percentil_CH4, MAX_CH4)
+        data_array = np.clip(self.y_CH4, percentil_CH4, max_CH4)
         self.y_CH4 = data_array.tolist()
 
 
