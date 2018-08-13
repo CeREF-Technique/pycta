@@ -103,13 +103,13 @@ class CTA():
             visit_duration = len(visit.y_CH4) * time_step
 
             # If visit duration is smaller than minimal duration
-            if (visit_duration < min_duration):
+            if (visit_duration < min_duration) and min_duration != None:
                 to_drop.append(self.visits.index(visit))
-            if ((visit_duration > max_duration) and (max_duration != None)):
+            if (visit_duration > max_duration) and (max_duration != None):
                 to_drop.append(self.visits.index(visit))
 
         # Drop visits
-        for i in range(len(to_drop) -1, -1, -1):
+        for i in range(len(to_drop) -1, -1, -1): # Need to go backwards in order to preserve de indexes correctly
             self.visits.pop(to_drop[i])
 
 
@@ -118,6 +118,7 @@ class CTA():
 
     def mock_visit(self, nbr_to_plot):
         """
+        Method used to show multiple visits in one plot. Just used to set the parameters (as minimums, maximums, times, etc.)
         Parameters
         ----------
         nbr_to_plot : int
@@ -294,7 +295,7 @@ class CTA():
 class Visit():
     """
     Descibes a visit.
-    Has a data (Pandas.DataFrame)
+    Has a dataframe (Pandas.DataFrame)
     y_CO2 = list of the CO2 amplitudes
     y_CH4 = list of the CH4 amplitudes
     y_CH4_CO2 = list of the CH4/CO2 amplitudes
@@ -306,8 +307,10 @@ class Visit():
     """
     def __init__(self, df):
         """
+        Parameters
+        ----------
             df : dataframe (from panda)
-            dataframe for one visit
+                dataframe for one visit
         """
         self.data = df
         self.y_CO2 = df.CO2.tolist()
@@ -431,17 +434,17 @@ class Visit():
             max_CO2 = MAX_CO2_B02
             max_CH4 = MAX_CH4_B02
         else:
-            print "Scale not found correctly. Expected B01 or B02 but has", self.scale
+            raise "Scale not found correctly. Expected B01 or B02 but has", self.scale
             
-        percentil_CO2 = np.percentile(self.y_CO2, min_CO2)
-        percentil_CH4 = np.percentile(self.y_CH4, min_CH4)
+        percentile_CO2 = np.percentile(self.y_CO2, min_CO2)
+        percentile_CH4 = np.percentile(self.y_CH4, min_CH4)
         
         data_array = np.arange(self.len_CO2) # initialize the data_array to the right length
-        data_array = np.clip(self.y_CO2, percentil_CO2, max_CO2)
+        data_array = np.clip(self.y_CO2, percentile_CO2, max_CO2)
         self.y_CO2 = data_array.tolist()
 
         data_array = np.arange(self.len_CH4) # initialize the data_array to the right length
-        data_array = np.clip(self.y_CH4, percentil_CH4, max_CH4)
+        data_array = np.clip(self.y_CH4, percentile_CH4, max_CH4)
         self.y_CH4 = data_array.tolist()
 
 
@@ -573,9 +576,9 @@ class Visit():
                   (self.area_CO2, self.area_CH4, self.area_CH4_CO2))
 
         if show_ID:
-            x_pos = x[len(x)/2]
+            x_pos = x[len(x) / 2]
             y_pos = axCO2.get_ylim() # [bottom, top]
-            y_pos = y_pos[0] + 0.97*(y_pos[1] - y_pos[0]) # set the text at 97 % of the height
+            y_pos = y_pos[0] + 0.97 * (y_pos[1] - y_pos[0]) # set the text at 97 % of the height
             axCO2.text(x_pos, y_pos, self.ID[0], ha="center", va="center", size=8)
                     
 
